@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Athleten Coaching App</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen pb-12">
+    <!-- App Header -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 px-4 py-3 flex justify-between items-center shadow-md">
+        <div class="flex items-center space-x-2">
+            <div class="bg-orange-600 text-white p-2 rounded-xl font-bold"><i class="fa-solid fa-dumbbell"></i></div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight">Strive-Style</h1>
+                <p class="text-xs text-slate-400" id="current-athlete-name">Athletin: Lisa</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button onclick="toggleMode()" id="mode-btn" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 transition">Modus: Athlet</button>
+            <button onclick="openSettings()" class="text-slate-400 hover:text-white p-2"><i class="fa-solid fa-gear"></i></button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-md mx-auto p-4 space-y-4">
+        <!-- Week Selector -->
+        <div class="flex space-x-2 overflow-x-auto pb-2 scrollbar-none" id="week-selector">
+            <!-- Dynamically filled -->
+        </div>
+
+        <!-- Day Selector -->
+        <div class="grid grid-cols-3 gap-2" id="day-selector">
+            <!-- Dynamically filled -->
+        </div>
+
+        <!-- Workout Header info -->
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-sm">
+            <div class="flex justify-between items-start mb-2">
+                <div>
+                    <span class="text-xs uppercase tracking-wider text-orange-500 font-bold" id="workout-tag">Krafttraining</span>
+                    <h2 class="text-xl font-bold" id="workout-title">Tag 1: Unterkörper A</h2>
+                </div>
+                <span id="workout-status" class="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 font-medium border border-amber-500/30">Ausstehend</span>
+            </div>
+            <p class="text-sm text-slate-400" id="workout-focus">Fokus: Squat & Posterior Chain</p>
+        </div>
+
+        <!-- Exercise List -->
+        <div class="space-y-3" id="exercise-list">
+            <!-- Dynamically filled -->
+        </div>
+
+        <!-- Coach Notes / Workout Feedback -->
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-3">
+            <h3 class="font-semibold text-sm text-slate-300"><i class="fa-solid fa-comment-dots mr-2 text-orange-500"></i>Feedback & Notizen</h3>
+            <textarea id="workout-feedback" placeholder="Wie lief das Training? Gewicht erhöht? RPE eingeschätzt..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-orange-500 h-24 resize-none"></textarea>
+            <button onclick="submitWorkout()" class="w-full bg-orange-600 hover:bg-orange-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-orange-600/20 flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-check"></i><span>Workout absenden / speichern</span>
+            </button>
+        </div>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-5 space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-lg">Einstellungen</h3>
+                <button onclick="closeSettings()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div>
+                <label class="block text-xs text-slate-400 mb-1">Google Sheets WebApp Webhook URL</label>
+                <input type="text" id="webhook-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-orange-500">
+                <p class="text-[10px] text-slate-500 mt-1">Hierhin wird das Feedback der Athletin geschickt.</p>
+            </div>
+            <button onclick="saveSettings()" class="w-full bg-slate-800 hover:bg-slate-700 font-semibold py-2.5 rounded-xl text-sm transition">Speichern</button>
+        </div>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        let currentMode = 'athlete'; // 'athlete' or 'coach'
+        let currentWeek = 1;
+        let currentDayIndex = 0;
+
+        // Mock data structure
+        let trainingData = {
+            athleteName: "Lisa",
+            weeks: [
+                {
+                    weekNumber: 1,
+                    days: [
+                        {
+                            title: "Tag 1: Unterkörper A",
+                            tag: "Kraft & Mobilität",
+                            focus: "Fokus: Kniebeuge Progression",
+                            status: "pending",
+                            exercises: [
+                                { name: "Low Bar Kniebeuge", sets: "4 Sätze à 6-8 Wdh", targetWeight: "80 kg", rpe: "RPE 8", completed: [false, false, false, false] },
+                                { name: "Rumänisches Kreuzheben", sets: "3 Sätze à 8-10 Wdh", targetWeight: "75 kg", rpe: "RPE 8", completed: [false, false, false] },
+                                { name: "Bulgarian Split Squats", sets: "3 Sätze à 10 Wdh/Seite", targetWeight: "15 kg", rpe: "RPE 9", completed: [false, false, false] }
+                            ]
+                        },
+                        {
+                            title: "Tag 2: Oberkörper A",
+                            tag: "Hypertrophie",
+                            focus: "Fokus: Brust & Rücken",
+                            status: "pending",
+                            exercises: [
+                                { name: "Bankdrücken (Langhantel)", sets: "4 Sätze à 6-8 Wdh", targetWeight: "50 kg", rpe: "RPE 8.5", completed: [false, false, false, false] },
+                                { name: "Rudern am Kabelzug", sets: "3 Sätze à 10-12 Wdh", targetWeight: "45 kg", rpe: "RPE 9", completed: [false, false, false] }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+
+        function renderApp() {
+            // Render Week Selector
+            const weekContainer = document.getElementById('week-selector');
+            weekContainer.innerHTML = '';
+            trainingData.weeks.forEach((w) => {
+                let btn = document.createElement('button');
+                btn.className = `px-4 py-2 rounded-xl text-sm font-semibold shrink-0 transition ${w.weekNumber === currentWeek ? 'bg-orange-600 text-white shadow-md shadow-orange-600/20' : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'}`;
+                btn.innerText = `Woche ${w.weekNumber}`;
+                btn.onclick = () => { currentWeek = w.weekNumber; currentDayIndex = 0; renderApp(); };
+                weekContainer.appendChild(btn);
+            });
+
+            // Render Day Selector
+            const dayContainer = document.getElementById('day-selector');
+            dayContainer.innerHTML = '';
+            let activeWeekObj = trainingData.weeks.find(w => w.weekNumber === currentWeek);
+            if (activeWeekObj) {
+                activeWeekObj.days.forEach((day, index) => {
+                    let dBtn = document.createElement('button');
+                    dBtn.className = `p-3 rounded-xl text-left border transition ${index === currentDayIndex ? 'bg-slate-800 border-orange-500/50 text-white' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'}`;
+                    dBtn.innerHTML = `<div class="text-xs font-bold text-orange-500">Tag ${index + 1}</div><div class="text-xs truncate font-medium mt-0.5">${day.title.split(':')[1] || day.title}</div>`;
+                    dBtn.onclick = () => { currentDayIndex = index; renderApp(); };
+                    dayContainer.appendChild(dBtn);
+                });
+
+                // Render Active Workout Header
+                let activeDay = activeWeekObj.days[currentDayIndex];
+                document.getElementById('workout-title').innerText = activeDay.title;
+                document.getElementById('workout-tag').innerText = activeDay.tag;
+                document.getElementById('workout-focus').innerText = activeDay.focus;
+                
+                let statusBadge = document.getElementById('workout-status');
+                if (activeDay.status === 'completed') {
+                    statusBadge.className = "text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-medium border border-emerald-500/30";
+                    statusBadge.innerText = "Erledigt ✓";
+                } else {
+                    statusBadge.className = "text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 font-medium border border-amber-500/30";
+                    statusBadge.innerText = "Ausstehend";
+                }
+
+                // Render Exercises
+                let exContainer = document.getElementById('exercise-list');
+                exContainer.innerHTML = '';
+                activeDay.exercises.forEach((ex, exIdx) => {
+                    let card = document.createElement('div');
+                    card.className = "bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-3 shadow-sm";
+                    
+                    let setsHtml = '';
+                    ex.completed.forEach((isDone, setIdx) => {
+                        setsHtml += `
+                            <button onclick="toggleSet(${exIdx}, ${setIdx})" class="w-8 h-8 rounded-lg text-xs font-bold border transition flex items-center justify-center ${isDone ? 'bg-emerald-600 border-emerald-500 text-white shadow' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'}">
+                                ${setIdx + 1}
+                            </button>
+                        `;
+                    });
+
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-bold text-sm text-slate-200">${ex.name}</h4>
+                                <p class="text-xs text-slate-400 mt-0.5">${ex.sets} | Ziel: <span class="text-slate-200 font-medium">${ex.targetWeight}</span> (${ex.rpe})</p>
+                            </div>
+                            ${currentMode === 'coach' ? `<button onclick="deleteExercise(${exIdx})" class="text-red-400 hover:text-red-300 text-xs"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        </div>
+                        <div class="flex items-center space-x-2 pt-1">
+                            <span class="text-xs text-slate-500 mr-1">Sätze:</span>
+                            <div class="flex space-x-1.5 flex-wrap">${setsHtml}</div>
+                        </div>
+                    `;
+                    exContainer.appendChild(card);
+                });
+
+                if (currentMode === 'coach') {
+                    let addBtn = document.createElement('button');
+                    addBtn.className = "w-full border border-dashed border-slate-700 hover:border-orange-500 py-3 rounded-2xl text-xs text-slate-400 hover:text-orange-400 transition font-medium flex items-center justify-center space-x-2";
+                    addBtn.innerHTML = `<i class="fa-solid fa-plus"></i><span>Übung zu diesem Tag hinzufügen</span>`;
+                    addBtn.onclick = addExercise;
+                    exContainer.appendChild(addBtn);
+                }
+            }
+        }
+
+        function toggleSet(exIdx, setIdx) {
+            let activeDay = trainingData.weeks.find(w => w.weekNumber === currentWeek).days[currentDayIndex];
+            activeDay.exercises[exIdx].completed[setIdx] = !activeDay.exercises[exIdx].completed[setIdx];
+            renderApp();
+        }
+
+        function toggleMode() {
+            currentMode = currentMode === 'athlete' ? 'coach' : 'athlete';
+            let btn = document.getElementById('mode-btn');
+            if (currentMode === 'coach') {
+                btn.className = "text-xs bg-orange-600 text-white px-3 py-1.5 rounded-lg border border-orange-500 transition font-bold";
+                btn.innerText = "Modus: Coach";
+            } else {
+                btn.className = "text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 transition";
+                btn.innerText = "Modus: Athlet";
+            }
+            renderApp();
+        }
+
+        function addExercise() {
+            let name = prompt("Übungsname (z.B. Schulterdrücken):");
+            if (!name) return;
+            let sets = prompt("Sätze & Wiederholungen (z.B. 3 Sätze à 10 Wdh):", "3 Sätze à 10 Wdh");
+            let weight = prompt("Zielgewicht (z.B. 20 kg):", "20 kg");
+            
+            let activeDay = trainingData.weeks.find(w => w.weekNumber === currentWeek).days[currentDayIndex];
+            activeDay.exercises.push({
+                name: name,
+                sets: sets,
+                targetWeight: weight,
+                rpe: "RPE 8",
+                completed: [false, false, false]
+            });
+            renderApp();
+        }
+
+        function deleteExercise(exIdx) {
+            if(!confirm("Übung wirklich löschen?")) return;
+            let activeDay = trainingData.weeks.find(w => w.weekNumber === currentWeek).days[currentDayIndex];
+            activeDay.exercises.splice(exIdx, 1);
+            renderApp();
+        }
+
+        function openSettings() {
+            document.getElementById('settings-modal').classList.remove('hidden');
+            document.getElementById('webhook-url').value = localStorage.getItem('sheet_webhook') || '';
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        function saveSettings() {
+            let url = document.getElementById('webhook-url').value;
+            localStorage.setItem('sheet_webhook', url);
+            closeSettings();
+            alert("Einstellungen gespeichert!");
+        }
+
+        function submitWorkout() {
+            let activeDay = trainingData.weeks.find(w => w.weekNumber === currentWeek).days[currentDayIndex];
+            activeDay.status = 'completed';
+            
+            let feedback = document.getElementById('workout-feedback').value;
+            let webhook = localStorage.getItem('sheet_webhook');
+
+            let payload = {
+                timestamp: new Date().toLocaleString(),
+                week: currentWeek,
+                day: activeDay.title,
+                rpe: "Abschlusstraining",
+                notes: feedback,
+                exercisesLogged: activeDay.exercises.map(ex => ({
+                    name: ex.name,
+                    completedSets: ex.completed.map((c, i) => c ? `Satz ${i+1}: ✓` : `Satz ${i+1}: -`).join(', ')
+                }))
+            };
+
+            if (webhook) {
+                fetch(webhook, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).then(() => {
+                    alert("Workout erfolgreich an Google Sheets übermittelt!");
+                }).catch(err => {
+                    alert("Fehler beim Senden: " + err);
+                });
+            } else {
+                alert("Workout lokal als 'erledigt' markiert! (Keine Google Sheets Webhook URL hinterlegt, daher nur lokal gespeichert).");
+            }
+            renderApp();
+        }
+
+        // Init App
+        renderApp();
+    </script>
+</body>
+</html>
