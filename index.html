@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="de" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strivee Style - Workout & Plan Builder</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        strivee: {
+                            50: '#fef2f2',
+                            100: '#ffe1e1',
+                            400: '#f87171',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            700: '#b91c1c',
+                            900: '#7f1d1d',
+                        },
+                        darkCard: '#0f172a',
+                        darkBorder: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; color: black !important; }
+            .print-card { background: white !important; border: 1px solid #ddd !important; color: black !important; box-shadow: none !important; }
+            .print-text { color: black !important; }
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans antialiased selection:bg-strivee-500 selection:text-white">
+
+    <!-- Top Navigation in Strivee Style -->
+    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-6 py-3 flex items-center justify-between no-print shrink-0 z-30">
+        <div class="flex items-center space-x-3">
+            <div class="bg-strivee-500 text-white p-2 rounded-xl flex items-center justify-center font-black tracking-tighter shadow-lg shadow-strivee-500/20">
+                <i data-lucide="zap" class="w-5 h-5 fill-white"></i>
+            </div>
+            <div>
+                <h1 class="font-extrabold text-base tracking-tight text-white uppercase flex items-center gap-2">
+                    STRIVEE <span class="text-strivee-400 font-semibold text-xs px-2 py-0.5 bg-strivee-500/10 rounded-md border border-strivee-500/20 lowercase tracking-normal">builder</span>
+                </h1>
+                <p class="text-[11px] text-slate-400 font-medium">Programming & WOD Planner</p>
+            </div>
+        </div>
+
+        <!-- Plan Meta Info Inputs -->
+        <div class="hidden lg:flex items-center space-x-3">
+            <div class="flex items-center space-x-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-lg focus-within:border-strivee-500 transition-colors">
+                <i data-lucide="user" class="w-4 h-4 text-strivee-400"></i>
+                <input type="text" id="clientNameInput" placeholder="Athlet / Klasse" value="CrossFit / Personal Client" class="bg-transparent border-none text-xs text-white focus:outline-none w-44 font-medium">
+            </div>
+            <div class="flex items-center space-x-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-lg focus-within:border-strivee-500 transition-colors">
+                <i data-lucide="calendar" class="w-4 h-4 text-strivee-400"></i>
+                <input type="text" id="planTitleInput" placeholder="Cycle / Woche" value="Woche 12 - Peaking Phase" class="bg-transparent border-none text-xs text-white focus:outline-none w-48 font-medium">
+            </div>
+        </div>
+
+        <!-- Top Navigation Actions -->
+        <div class="flex items-center space-x-2">
+            <button onclick="switchTab('editor')" id="tabEditorBtn" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-strivee-500 text-white flex items-center space-x-1.5 shadow-md shadow-strivee-500/20 uppercase tracking-wide">
+                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                <span>Programming Editor</span>
+            </button>
+            <button onclick="switchTab('preview')" id="tabPreviewBtn" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-300 hover:bg-slate-800 flex items-center space-x-1.5">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+                <span>WOD Vorschau</span>
+            </button>
+            <button onclick="switchTab('mobile')" id="tabMobileBtn" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-300 hover:bg-slate-800 flex items-center space-x-1.5 border border-strivee-500/30 text-strivee-400">
+                <i data-lucide="smartphone" class="w-4 h-4"></i>
+                <span>Kunden-Ansicht (Mobile)</span>
+            </button>
+            <div class="h-5 w-px bg-slate-800 mx-1"></div>
+            <button onclick="openModal('exportModal')" class="p-2 text-slate-300 hover:bg-slate-800 rounded-lg transition-colors" title="Teilen & Export">
+                <i data-lucide="share-2" class="w-4.5 h-4.5"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Application Canvas -->
+    <div class="flex-1 flex overflow-hidden">
+        
+        <!-- EDITOR TAB CONTENT -->
+        <div id="editorTab" class="flex-1 flex overflow-hidden w-full">
+            
+            <!-- Left Sidebar: Exercise & WOD Movement Bank -->
+            <aside class="w-80 border-r border-slate-800 bg-slate-900/60 flex flex-col no-print shrink-0 hidden md:flex">
+                <div class="p-4 border-b border-slate-800 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-bold text-xs uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                            <i data-lucide="database" class="w-4 h-4 text-strivee-400"></i>
+                            Movement Library
+                        </h2>
+                        <button onclick="openModal('addCustomExerciseModal')" class="text-[11px] text-strivee-400 hover:underline font-semibold flex items-center gap-0.5">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Neu
+                        </button>
+                    </div>
+                    <!-- Search & Filters -->
+                    <div class="relative">
+                        <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500"></i>
+                        <input type="text" id="exerciseSearch" onkeyup="filterExercises()" placeholder="Übung oder Weight movement suchen..." class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-strivee-500">
+                    </div>
+                    <div class="flex flex-wrap gap-1" id="categoryFilters">
+                        <button onclick="filterCategory('all')" class="cat-filter active px-2 py-0.5 rounded text-[10px] font-semibold bg-strivee-500/20 text-strivee-400 border border-strivee-500/30">Alle</button>
+                        <button onclick="filterCategory('Weightlifting')" class="cat-filter px-2 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-400 hover:bg-slate-700">Barbell</button>
+                        <button onclick="filterCategory('Gymnastics')" class="cat-filter px-2 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-400 hover:bg-slate-700">Gymnastics</button>
+                        <button onclick="filterCategory('Monostructural')" class="cat-filter px-2 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-400 hover:bg-slate-700">Cardio</button>
+                        <button onclick="filterCategory('Dumbbell')" class="cat-filter px-2 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-400 hover:bg-slate-700">DB / KB</button>
+                    </div>
+                </div>
+
+                <!-- Exercise List -->
+                <div class="flex-1 overflow-y-auto p-3 space-y-2" id="exerciseLibraryList">
+                    <!-- Dynamic Items -->
+                </div>
+            </aside>
+
+            <!-- Middle/Right Area: Day & WOD Builder Area -->
+            <main class="flex-1 flex flex-col bg-slate-950 overflow-hidden">
+                
+                <!-- Day / Session Tabs -->
+                <div class="bg-slate-900 border-b border-slate-800 px-6 py-2 flex items-center justify-between shrink-0 overflow-x-auto">
+                    <div class="flex items-center space-x-2" id="dayTabsContainer">
+                        <!-- Dynamic Day Tabs -->
+                    </div>
+                    <button onclick="addNewDay()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg flex items-center gap-1 transition-colors border border-slate-700 shrink-0 ml-2">
+                        <i data-lucide="plus" class="w-3.5 h-3.5 text-strivee-400"></i>
+                        Tag hinzufügen
+                    </button>
+                </div>
+
+                <!-- Active Session Canvas -->
+                <div class="flex-1 overflow-y-auto p-6" id="dayCanvas">
+                    <div class="max-w-4xl mx-auto space-y-6">
+                        
+                        <!-- Session Header Box -->
+                        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+                            <div class="flex-1 space-y-1">
+                                <label class="text-[10px] font-bold tracking-wider text-strivee-400 uppercase">SESSION WORKOUT TITEL</label>
+                                <input type="text" id="currentDayTitle" onchange="updateCurrentDayInfo()" placeholder="z. B. Montag: Heavy Snatch + Metcon" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-sm font-bold text-white focus:outline-none focus:border-strivee-500 w-full md:w-96">
+                            </div>
+                            
+                            <!-- Strivee Section Add Buttons -->
+                            <div class="flex items-center gap-2 border-t md:border-t-0 border-slate-800 pt-3 md:pt-0">
+                                <div class="relative group">
+                                    <button class="px-3.5 py-1.5 bg-strivee-500 text-white font-bold text-xs rounded-lg flex items-center gap-1.5 shadow-md shadow-strivee-500/20 uppercase tracking-wide">
+                                        <i data-lucide="plus" class="w-4 h-4"></i>
+                                        Sektion +
+                                    </button>
+                                    <div class="absolute right-0 top-full mt-1 w-48 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-1 hidden group-hover:block z-40">
+                                        <button onclick="addWodSection('Strength')" class="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full bg-amber-400"></span> Strength & Skill
+                                        </button>
+                                        <button onclick="addWodSection('AMRAP')" class="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full bg-strivee-400"></span> Metcon: AMRAP
+                                        </button>
+                                        <button onclick="addWodSection('For Time')" class="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full bg-rose-400"></span> Metcon: For Time
+                                        </button>
+                                        <button onclick="addWodSection('EMOM')" class="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full bg-indigo-400"></span> Metcon: EMOM
+                                        </button>
+                                        <button onclick="addWodSection('WarmUp')" class="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Warm-Up / Cool-Down
+                                        </button>
+                                    </div>
+                                </div>
+                                <button onclick="deleteCurrentDay()" class="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors border border-transparent hover:border-rose-500/20" title="Tag löschen">
+                                    <i data-lucide="trash-2" class="w-4.5 h-4.5"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- WOD Sections Container -->
+                        <div id="wodSectionsContainer" class="space-y-6">
+                            <!-- Dynamic Strivee WOD Sections rendered here -->
+                        </div>
+
+                        <!-- Empty Day Placeholder -->
+                        <div id="emptyDayState" class="hidden text-center py-16 border-2 border-dashed border-slate-800 rounded-2xl bg-slate-900/30">
+                            <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto text-strivee-400 mb-3">
+                                <i data-lucide="zap" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-slate-200 font-bold text-sm uppercase tracking-wide">Keine WOD Sektionen vorhanden</h3>
+                            <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Füge deiner Session Strength-Blöcke, AMRAPs, EMOMs oder Warm-Ups im Strivee-Stil hinzu.</p>
+                            <div class="mt-4 flex justify-center gap-2">
+                                <button onclick="addWodSection('Strength')" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-strivee-400 text-xs font-semibold rounded-lg transition-colors border border-slate-700">
+                                    + Strength Block
+                                </button>
+                                <button onclick="addWodSection('For Time')" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-strivee-400 text-xs font-semibold rounded-lg transition-colors border border-slate-700">
+                                    + Metcon Block
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- PREVIEW TAB CONTENT -->
+        <div id="previewTab" class="hidden flex-1 flex flex-col bg-slate-950 overflow-hidden w-full">
+            <!-- Controls Bar -->
+            <div class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between no-print shrink-0">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Strivee Display:</span>
+                    <span class="px-2.5 py-1 bg-strivee-500/10 text-strivee-400 border border-strivee-500/20 rounded-md text-xs font-bold">WOD & Leaderboard Ready</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="window.print()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors border border-slate-700">
+                        <i data-lucide="printer" class="w-3.5 h-3.5"></i> Drucken / Whiteboard PDF
+                    </button>
+                    <button onclick="copyFormattedText()" class="px-3.5 py-1.5 bg-strivee-500 hover:bg-strivee-600 text-white font-bold text-xs rounded-lg flex items-center gap-1.5 transition-colors shadow-md shadow-strivee-500/20 uppercase tracking-wide">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i> Text kopieren (WhatsApp / App)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Preview Viewport -->
+            <div class="flex-1 overflow-y-auto p-6 md:p-10">
+                <div class="max-w-3xl mx-auto" id="printableArea">
+                    
+                    <!-- Strivee Style WOD Header -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-8 shadow-xl print-card">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+                            <div>
+                                <span class="text-[10px] font-black uppercase tracking-widest text-strivee-400">DAILY PROGRAMMING</span>
+                                <h1 class="text-2xl font-black text-white mt-1 uppercase tracking-tight" id="prevPlanTitle">Woche 12 - Peaking Phase</h1>
+                            </div>
+                            <div class="text-left md:text-right">
+                                <div class="text-xs font-bold text-slate-200" id="prevClientName">Athlet: CrossFit / Personal Client</div>
+                                <div class="text-[11px] text-slate-500 mt-0.5" id="prevDateDisplay">Date: --</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rendered Days / WOD Sections -->
+                    <div id="previewDaysContainer" class="space-y-10">
+                        <!-- Dynamic Preview rendered here -->
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- MOBILE CLIENT VIEW TAB -->
+        <div id="mobileTab" class="hidden flex-1 flex flex-col bg-slate-950 overflow-y-auto w-full items-center py-6 px-3">
+            <!-- Mobile Phone Shell Simulation -->
+            <div class="w-full max-w-sm bg-slate-900 border-4 border-slate-800 rounded-[38px] shadow-2xl overflow-hidden flex flex-col min-h-[720px]">
+                
+                <!-- Phone Top Bar -->
+                <div class="bg-slate-950 px-6 pt-3 pb-2 flex items-center justify-between border-b border-slate-800">
+                    <div class="text-[10px] font-black text-strivee-400 flex items-center gap-1 uppercase tracking-wider">
+                        <i data-lucide="zap" class="w-3.5 h-3.5 fill-strivee-500 text-strivee-500"></i> STRIVEE ATHLETE
+                    </div>
+                    <div class="text-[10px] text-slate-500 font-bold" id="mobileClientDate">HEUTE</div>
+                </div>
+
+                <!-- Client App Header -->
+                <div class="p-4 bg-slate-900 border-b border-slate-800/80 space-y-1">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-strivee-400" id="mobileAppClientName">ATHLET</span>
+                    <h2 class="text-base font-black text-white uppercase tracking-tight" id="mobileAppTitle">PROGRAMMING</h2>
+                </div>
+
+                <!-- Day Selector Pills for Client -->
+                <div class="bg-slate-950 px-3 py-2 flex items-center gap-1.5 overflow-x-auto border-b border-slate-800/60 no-scrollbar" id="mobileDayPills">
+                    <!-- Dynamic Day Pills -->
+                </div>
+
+                <!-- Mobile WOD Content Area -->
+                <div class="flex-1 overflow-y-auto p-4 space-y-4" id="mobileWodContent">
+                    <!-- Dynamic Mobile Workouts -->
+                </div>
+
+                <!-- Phone Bottom Bar -->
+                <div class="bg-slate-950 border-t border-slate-800 px-6 py-3 flex justify-around text-slate-500">
+                    <div class="flex flex-col items-center text-strivee-400">
+                        <i data-lucide="dumbbell" class="w-4 h-4"></i>
+                        <span class="text-[9px] font-bold mt-0.5 uppercase">Workout</span>
+                    </div>
+                    <div class="flex flex-col items-center hover:text-slate-300">
+                        <i data-lucide="trophy" class="w-4 h-4"></i>
+                        <span class="text-[9px] font-bold mt-0.5 uppercase">Scores</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL: Add Custom Exercise -->
+    <div id="addCustomExerciseModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-slate-100 text-sm uppercase tracking-wider flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-strivee-400"></i>
+                    Neue Übung hinzufügen
+                </h3>
+                <button onclick="closeModal('addCustomExerciseModal')" class="text-slate-500 hover:text-slate-300">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-slate-400 text-xs font-medium mb-1">Name der Übung</label>
+                    <input type="text" id="newExName" placeholder="z.B. Overhead Squat" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-strivee-500">
+                </div>
+                <div>
+                    <label class="block text-slate-400 text-xs font-medium mb-1">Kategorie</label>
+                    <select id="newExCategory" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-strivee-500">
+                        <option value="Weightlifting">Weightlifting / Barbell</option>
+                        <option value="Gymnastics">Gymnastics</option>
+                        <option value="Monostructural">Monostructural / Cardio</option>
+                        <option value="Dumbbell">Dumbbell / Kettlebell</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-slate-400 text-xs font-medium mb-1">YouTube Link (optional)</label>
+                    <input type="text" id="newExVideo" placeholder="https://www.youtube.com/watch?v=..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-strivee-500">
+                </div>
+                <div>
+                    <label class="block text-slate-400 text-xs font-medium mb-1">Hinweise / Notizen</label>
+                    <input type="text" id="newExNotes" placeholder="Kurze Ausführungstipps..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-strivee-500">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                <button onclick="closeModal('addCustomExerciseModal')" class="px-3 py-1.5 bg-slate-800 text-slate-300 text-xs font-medium rounded-lg hover:bg-slate-700">Abbrechen</button>
+                <button onclick="saveCustomExercise()" class="px-4 py-1.5 bg-strivee-500 text-white font-bold text-xs rounded-lg hover:bg-strivee-600">Speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: YouTube Video Player -->
+    <div id="videoModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl space-y-3">
+            <div class="flex justify-between items-center px-5 pt-4 pb-2 border-b border-slate-800">
+                <h3 class="font-bold text-slate-100 text-sm uppercase tracking-wide flex items-center gap-2" id="videoModalTitle">
+                    <i data-lucide="youtube" class="w-4 h-4 text-red-500"></i> Übungs-Video Tutorial
+                </h3>
+                <button onclick="closeVideoModal()" class="text-slate-500 hover:text-slate-300">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="aspect-video w-full bg-black">
+                <iframe id="youtubeIframe" class="w-full h-full" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+            <div class="p-4 pt-0 text-right">
+                <button onclick="closeVideoModal()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-lg">Schließen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Export & Share -->
+    <div id="exportModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-slate-100 text-sm uppercase tracking-wider flex items-center gap-2">
+                    <i data-lucide="share-2" class="w-4 h-4 text-strivee-400"></i>
+                    Strivee Programming Export
+                </h3>
+                <button onclick="closeModal('exportModal')" class="text-slate-500 hover:text-slate-300">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-slate-400 text-xs font-medium mb-1.5">WOD Clean Text Export (Strivee / WhatsApp Format)</label>
+                    <textarea id="exportTextArea" readonly class="w-full h-48 bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-300 focus:outline-none resize-none"></textarea>
+                </div>
+                <div class="flex flex-wrap gap-2 justify-between items-center pt-2 border-t border-slate-800">
+                    <div class="flex gap-2">
+                        <button onclick="downloadJsonPlan()" class="px-3 py-1.5 bg-slate-800 text-slate-300 text-xs font-medium rounded-lg hover:bg-slate-700 flex items-center
