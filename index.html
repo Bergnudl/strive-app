@@ -487,8 +487,10 @@
             }
             try {
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'currentPlan', 'active');
+                // Clean undefined values so Firestore setDoc does not throw
+                const cleanPlan = JSON.parse(JSON.stringify(window.workoutPlan || {}));
                 await setDoc(docRef, {
-                    plan: window.workoutPlan,
+                    plan: cleanPlan,
                     updatedAt: new Date().toISOString()
                 });
                 showToast("Plan erfolgreich in Cloud gespeichert!");
@@ -520,8 +522,8 @@
         let currentFilterCategory = 'all';
         let activeDayIndex = 0;
 
-        // Strivee Workout Data Model
-        let workoutPlan = {
+        // Strivee Workout Data Model bound to window.workoutPlan
+        window.workoutPlan = {
             clientName: "CrossFit / Personal Client",
             title: "Woche 12 - Peaking Phase",
             createdDate: new Date().toLocaleDateString('de-DE'),
@@ -588,7 +590,7 @@
             renderExerciseLibrary();
             renderDayTabs();
             renderActiveDayCanvas();
-            document.getElementById('prevDateDisplay').innerText = `Datum: ${workoutPlan.createdDate}`;
+            document.getElementById('prevDateDisplay').innerText = `Datum: ${window.workoutPlan.createdDate}`;
 
             // Check if Client Mode requested via URL query string ?view=client
             const urlParams = new URLSearchParams(window.location.search);
@@ -598,10 +600,10 @@
             }
 
             document.getElementById('clientNameInput').addEventListener('input', (e) => {
-                workoutPlan.clientName = e.target.value;
+                window.workoutPlan.clientName = e.target.value;
             });
             document.getElementById('planTitleInput').addEventListener('input', (e) => {
-                workoutPlan.title = e.target.value;
+                window.workoutPlan.title = e.target.value;
             });
         }
 
